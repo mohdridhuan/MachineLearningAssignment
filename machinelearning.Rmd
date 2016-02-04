@@ -1,0 +1,106 @@
+---
+title: "Resubmitted Practical Machine Learning Assignment"
+author: "Rid"
+date: "Thursday, April 2, 2016"
+output: html_document
+---
+
+#Executive Summary
+
+##Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##Data
+
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+
+#Exploratory Data Analysis
+
+##Data Processing and Data Cleaning
+
+```{r}
+trainingPML   <-read.csv('pml-training.csv', na.strings=c("NA","#DIV/0!", ""))
+testingPML <-read.csv('pml-testing.csv' , na.strings=c("NA", "#DIV/0!", ""))
+trainingPML<-trainingPML[,colSums(is.na(trainingPML)) == 0]
+testingPML <-testingPML[,colSums(is.na(testingPML)) == 0]
+trainingPML   <-trainingPML[,-c(1:7)]
+testingPML <-testingPML[,-c(1:7)]
+```
+
+
+##Data Analysis
+
+```{r}
+library(caret)
+library(ggplot2)
+library(lattice)
+library(kernlab)
+library(randomForest)
+
+seed <- as.numeric(as.Date("2016-01-29"))
+set.seed(seed)
+
+```
+
+
+
+### Cross-validation
+We split the training set into two for cross validation purposes. 
+Subsample data for Training = 75%
+Subsample data for Training = 25%
+
+```{r datasplitting, echo=TRUE, results='hide'}
+trainingIDX <- createDataPartition(trainingPML$classe,p=0.75,list=FALSE)
+trainingDATA <- trainingPML[trainingIDX,]
+testingDATA <- trainingPML[-trainingIDX,]
+```
+
+###Data Overview
+
+
+```{r}
+
+plot(trainingDATA$classe, col="black", main="Levels of Classe within the trainingNZV", xlab="Level of Classe", ylab="Frequency")
+
+```
+
+The data contains 5 levels, A,B,C,D,E. Level A is the most frequent with more than 4000 occurrences while level D is the least frequent with about 2500 occurrences.
+
+##Prediction Model
+
+We are using Random Forest for prediction.
+The errrors of the prediction algorithm is being shown here by using the confusion matrix.
+
+```{r}
+model <- randomForest(classe~.,data=trainingDATA, method="class")
+prediction <- predict(model, testingDATA, type ="class" ) 
+
+confusionMatrix(prediction, testingDATA$classe)
+
+```
+
+#Result
+
+###Expected out-of-sample error
+
+From the confusion matrix, it can be seen that the Random Forest algorithm's prediction accuracy is 99.39%.
+Out-of-sample error rate calculation is 100% - accuracy = 0.61%.
+Thus, the **out-of-sample error rate is 0.61%**
+
+
+
+###The anwser to the prediction
+
+```{r}
+
+answer <- predict(model,testingPML, type="class") 
+answer
+```
